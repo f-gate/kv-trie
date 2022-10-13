@@ -1,13 +1,10 @@
 
 
-
-use hex::*;
-
-#[derive(Clone)]
+//#[derive(Clone)]
 pub struct ChildNode {
     value: u8,
     is_end: bool,
-    nodes: Option<Box<[ChildNode; 16]>>
+    nodes: Option<Box<[Option<ChildNode>; 16]>>
 }
 
 impl ChildNode {
@@ -20,7 +17,6 @@ impl ChildNode {
     }
 }
 
-
 pub struct Trie {
     root: ChildNode
 }
@@ -32,18 +28,15 @@ impl Trie {
         }
     }
 
-    fn insert(parent_node: &ChildNode, key: &[u8], data: &[u8]) -> Result<(), ()> {
+    fn insert(parent_node: &mut ChildNode, key: &[u8], data: &[u8]) -> Result<(), ()> {
         let mut has_found_node: bool = false;
         
-        parent_node.nodes.as_deref().into_iter().flatten().map(|mut n| {
-            if n.value == key[0] {
-                if key.len() != 1 {
-                    Self::insert(n, &key[1..], data);
-                }
-                has_found_node = true;
+        if let Some(nodes) = &mut parent_node.nodes {
+            if key.len() != 1 {
+                Self::insert(&mut nodes[key[0] as usize].as_ref().expect("node has been found; qed"), &key[1..], data);
             }
-            ()
-        }).collect::<()>();
+            has_found_node = true;
+        }
 
         if !has_found_node {
             let mut new_node = ChildNode::new( 
@@ -51,10 +44,12 @@ impl Trie {
                 key.len() == 1
             );
             if key.len() != 1 {
-                Self::insert(&new_node, &key[1..], data);
+                Self::insert(&mut new_node, &key[1..], data);
             }
 
-            //parent_node.nodes = Some(Box::new(new_node))
+            let mut nodes: [Option<ChildNode>; 16] = [None, None,None, None,None, None,None, None,None, None,None, None,None, None,None, None,];
+            nodes[key[0] as usize] = Some(new_node);
+            parent_node.nodes = Some(Box::new(nodes));
         }
         Ok(())
     }
