@@ -3,26 +3,27 @@
 
 use hex::*;
 
-struct ChildNode {
+#[derive(Clone)]
+pub struct ChildNode {
     value: u8,
     is_end: bool,
-    nodes: [Option<ChildNode>, 16]
-};
+    nodes: Option<Box<[ChildNode; 16]>>
+}
 
 impl ChildNode {
-    fn new(value: u8, is_end: bool) {
-        ChildNode {
+    fn new(value: u8, is_end: bool) -> ChildNode {
+        Self {
             value,
             is_end,
-            nodes: [None; 16]
+            nodes: None
         }
     }
 }
 
 
-struct Trie {
+pub struct Trie {
     root: ChildNode
-};
+}
 
 impl Trie {
     fn new() -> Self {
@@ -31,43 +32,38 @@ impl Trie {
         }
     }
 
-    fn insert(parent_node: &mut ChildNode, key: [u8], data: [u8]) -> Result<(), ()> {
-        let has_found_node: bool = false;
+    fn insert(parent_node: &ChildNode, key: &[u8], data: &[u8]) -> Result<(), ()> {
+        let mut has_found_node: bool = false;
         
-        parent_node.nodes.iter().flatten().map(|n| {
+        parent_node.nodes.as_deref().into_iter().flatten().map(|mut n| {
             if n.value == key[0] {
                 if key.len() != 1 {
-                    insert(&mut n, key[1..], data)
+                    Self::insert(n, &key[1..], data);
                 }
                 has_found_node = true;
-                break
             }
-        })
+            ()
+        }).collect::<()>();
 
-        is !has_found_node {
+        if !has_found_node {
             let mut new_node = ChildNode::new( 
-                value: key[0],
-                is_end: (key.len == 1)
-            )
+                key[0],
+                key.len() == 1
+            );
             if key.len() != 1 {
-                insert(&mut new_node, key[1..], data)
-                parent_node.nodes.push(new_node);
-            } else {
-                break
+                Self::insert(&new_node, &key[1..], data);
             }
-            
-        }
 
+            //parent_node.nodes = Some(Box::new(new_node))
+        }
         Ok(())
     }
 
-    fn get(key: Hash) -> Result<[u8], ()> {
-
-        Ok([1])
+    fn get(key: &[u8]) -> Result<(), ()> {
+        Ok(())
     }
 
-    fn remove(key: Hash) -> Result<(), ()> {
+    fn remove(key: &[u8]) -> Result<(), ()> {
         Ok(())
     }
 }
-
