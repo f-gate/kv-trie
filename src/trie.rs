@@ -1,10 +1,9 @@
 
 
-//#[derive(Clone)]
 pub struct ChildNode {
     value: u8,
     is_end: bool,
-    nodes: Option<Box<[Option<ChildNode>; 16]>>
+    nodes: Box<[Option<ChildNode>; 16]>
 }
 
 impl ChildNode {
@@ -12,8 +11,41 @@ impl ChildNode {
         Self {
             value,
             is_end,
-            nodes: None
+            nodes: Box::new([None, None,None, None,None, None,None, None,None, None,None, None,None, None,None, None])
         }
+    }
+
+    fn insert(&mut self, key: &[u8], data: &[u8]) -> Result<(), ()> {
+        let mut has_found_node: bool = false;
+        // check to see if the node exists in the children
+        if  self.nodes[key[0] as usize].is_some() {
+            if key.len() != 1 {
+                self.nodes[key[0] as usize]
+                .as_mut()
+                .expect("node has been found; qed")
+                .insert(&key[1..], data);
+            } else {
+                // set child node as false.
+            }
+        
+            has_found_node = true;
+        }
+
+        if !has_found_node {
+            let mut new_node = ChildNode::new( 
+                key[0],
+                key.len() == 1
+            );
+            if key.len() != 1 {
+                new_node.insert(&key[1..], data);
+            } else {
+                // set child node as leaf
+            }
+            let mut nodes: [Option<ChildNode>; 16] = [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,];
+            nodes[key[0] as usize] = Some(new_node);
+            self.nodes = Box::new(nodes);
+        }
+        Ok(())
     }
 }
 
@@ -28,31 +60,10 @@ impl Trie {
         }
     }
 
-    fn insert(parent_node: &mut ChildNode, key: &[u8], data: &[u8]) -> Result<(), ()> {
-        let mut has_found_node: bool = false;
-        
-        if let Some(nodes) = &mut parent_node.nodes {
-            if key.len() != 1 {
-                Self::insert(&mut nodes[key[0] as usize].as_ref().expect("node has been found; qed"), &key[1..], data);
-            }
-            has_found_node = true;
-        }
-
-        if !has_found_node {
-            let mut new_node = ChildNode::new( 
-                key[0],
-                key.len() == 1
-            );
-            if key.len() != 1 {
-                Self::insert(&mut new_node, &key[1..], data);
-            }
-
-            let mut nodes: [Option<ChildNode>; 16] = [None, None,None, None,None, None,None, None,None, None,None, None,None, None,None, None,];
-            nodes[key[0] as usize] = Some(new_node);
-            parent_node.nodes = Some(Box::new(nodes));
-        }
-        Ok(())
+    fn insert(&mut self, key: &[u8], data: &[u8]) -> Result<(), ()> {
+        self.root.insert(key, data)
     }
+   
 
     fn get(key: &[u8]) -> Result<(), ()> {
         Ok(())
