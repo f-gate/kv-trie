@@ -2,6 +2,7 @@ use digest::*;
 use blake2::*;
 use core::marker::PhantomData;
 use hex_literal::hex;
+use digest::generic_array::functional::FunctionalSequence;
 
 
 
@@ -26,7 +27,7 @@ impl ChildNode {
     fn insert(&mut self, key: &[u8], data: &[u8]) -> Result<(), ()> {
 
         // Check to see if the node exists in the children.
-        if  self.nodes[key[0].as_bytes()].is_some() {
+        if  self.nodes[key[0] as usize].is_some() {
             // If the key is not at the end then see if we can find a deeper node.
             if key.len() != 1 {
                 let _ = self.nodes[key[0] as usize]
@@ -77,7 +78,20 @@ impl <T: Digest> Trie<T> {
         // Hash the key for better distribution.
         let mut hasher = T::new();
         hasher.update(key.as_bytes());
-        self.root.insert(&hasher.finalize(), data)
+
+        // Get the complete binary as a vec of bits.
+        let bits = hasher.finalize().as_slice()
+        .iter()
+        .map(|num| {
+            *num as u16;
+            // convert to bits using high/low byte method. 
+            (num >> 8, num & 0xFF)
+        }).collect::<Vec<(u8, u8)>>();
+
+        dbg!(&bits);
+    
+        // Each byte is a node.
+        self.root.insert(&[0], data)    
     }
    
 
@@ -95,16 +109,15 @@ impl <T: Digest> Trie<T> {
     }
 }
 
-
 // current issues is that when inserting 122 it overrides 123
 #[test]
 fn test_insert_state() {
     let mut trie: Trie<Blake2b512> = Trie::new();
+    assert!(trie.insert("hello", &[0]).is_err());
+}
 
-    assert!(trie.insert("hello", &[0]).is_ok());
-    assert!(trie.insert("hello2", &[0]).is_ok());
-    dbg!(&trie.root);
+#[test]
+fn test_hex() {
 
-    assert!(trie.insert("hello3", &[0]).is_err());
 
 }
