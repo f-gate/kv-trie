@@ -1,3 +1,9 @@
+use digest::*;
+use blake2::*;
+use core::marker::PhantomData;
+use hex_literal::hex;
+
+
 
 #[derive(Debug)]
 pub struct ChildNode {
@@ -18,8 +24,9 @@ impl ChildNode {
     }
 
     fn insert(&mut self, key: &[u8], data: &[u8]) -> Result<(), ()> {
+
         // Check to see if the node exists in the children.
-        if  self.nodes[key[0] as usize].is_some() {
+        if  self.nodes[key[0].as_bytes()].is_some() {
             // If the key is not at the end then see if we can find a deeper node.
             if key.len() != 1 {
                 let _ = self.nodes[key[0] as usize]
@@ -43,33 +50,39 @@ impl ChildNode {
             // This is done after recursion because we need that node to be populated with the nested nodes within it.
             self.nodes[key[0] as usize] = Some(new_node);
         }
-    }
         Ok(())
+    }
 }
 
+#[derive(Debug)]
 pub enum NodeType {
     Leaf,
     Branch,
 }
 
-pub struct Trie {
-    root: ChildNode
+pub struct Trie<T: Digest> {
+    root: ChildNode,
+    phantom: PhantomData<T>,
 }
 
-impl Trie {
+impl <T: Digest> Trie<T> {
     fn new() -> Self {
         Self {
-            root: ChildNode::new(0, false)
+            root: ChildNode::new(0, false),
+            phantom: PhantomData,
         }
     }
 
-    fn insert(&mut self, key: &[u8], data: &[u8]) -> Result<(), ()> {
-        self.root.insert(key, data)
+    fn insert(&mut self, key: &str, data: &[u8]) -> Result<(), ()> {
+        // Hash the key for better distribution.
+        let mut hasher = T::new();
+        hasher.update(key.as_bytes());
+        self.root.insert(&hasher.finalize(), data)
     }
    
 
-    fn get(key: &[u8]) -> Result<(), ()> {
-        Ok(())
+    fn get(&mut self, key: &[u8]) -> Result<(), ()> {
+        todo!()
     }
 
     fn remove(key: &[u8]) -> Result<(), ()> {
@@ -86,12 +99,12 @@ impl Trie {
 // current issues is that when inserting 122 it overrides 123
 #[test]
 fn test_insert_state() {
-    let mut Trie = Trie::new();
+    let mut trie: Trie<Blake2b512> = Trie::new();
 
-    assert!(Trie.insert(&[1,2,3], &[0]).is_ok());
-    assert!(Trie.insert(&[1,2,2,3], &[0]).is_ok());
-    dbg!(&Trie.root);
+    assert!(trie.insert("hello", &[0]).is_ok());
+    assert!(trie.insert("hello2", &[0]).is_ok());
+    dbg!(&trie.root);
 
-    assert!(Trie.insert(&[1,2], &[0]).is_err());
+    assert!(trie.insert("hello3", &[0]).is_err());
 
 }
