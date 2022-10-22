@@ -9,7 +9,7 @@ use digest::generic_array::functional::FunctionalSequence;
 #[derive(Debug)]
 pub struct ChildNode {
     value: u8,
-    // Boxed due to infinate recursion.
+    // Boxed due to recursive type.
     nodes: Box<[Option<ChildNode>; 16]>,
     node_type: NodeType,
 }
@@ -82,14 +82,12 @@ impl <T: Digest> Trie<T> {
         // Get the complete binary as a vec of bits.
         let bits = hasher.finalize().as_slice()
         .iter()
-        .map(|num| {
-            *num as u16;
-            // convert to bits using high/low byte method. 
-            (num >> 8, num & 0xFF)
-        }).collect::<Vec<(u8, u8)>>();
+        .flat_map(|num| {
+            // This will return the index related to the hex digit
+            // i.e 255d = 0xff == 1515, 10d = 0x0A = 0010, 100d = 0x56 = 0506 
+                [decimal_to_hex_index(num)]
+        }).collect::<Vec<u16>>();
 
-        dbg!(&bits);
-    
         // Each byte is a node.
         self.root.insert(&[0], data)    
     }
@@ -107,6 +105,14 @@ impl <T: Digest> Trie<T> {
     fn optimise_patricia() -> (){
         todo!()
     }
+}
+
+
+// for numbers below 128 only
+fn decimal_to_hex_index(decimal: u8) -> u8 {
+    // todo: 8 bit numbers
+    // tis the basic format tho
+    concat_bytes!(decimal / 16u8, decimal % 16u8)
 }
 
 // current issues is that when inserting 122 it overrides 123
