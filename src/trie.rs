@@ -84,16 +84,18 @@ impl <T: Digest> Trie<T> {
         .iter()
         .flat_map(|num| {
             // This will return the index related to the hex digit
-            // i.e 255d = 0xff == 1515, 10d = 0x0A = 0010, 100d = 0x56 = 0506 
-                [decimal_to_hex_index(num)]
-        }).collect::<Vec<u16>>();
-
+            // i.e 255d = 0xff == 15,15, 10d = 0x0A = 00,10, 100d = 0x56 = 05,06 
+                decimal_to_hex_index(*num)
+        }).collect::<Vec<u8>>();
+        dbg!(&bits);
         // Each byte is a node.
-        self.root.insert(&[0], data)    
+        self.root.insert(bits.as_slice(), data)  
     }
+
    
 
     fn get(&mut self, key: &[u8]) -> Result<(), ()> {
+
         todo!()
     }
 
@@ -109,17 +111,14 @@ impl <T: Digest> Trie<T> {
 
 
 // for numbers below 128 only
-fn decimal_to_hex_index(decimal: u8) -> u8 {
-    // todo: 8 bit numbers
-    // tis the basic format tho
-    concat_bytes!(decimal / 16u8, decimal % 16u8)
+fn decimal_to_hex_index(decimal: u8) -> [u8; 2] {
+    [decimal / 16u8, decimal % 16u8]
 }
 
-// current issues is that when inserting 122 it overrides 123
 #[test]
 fn test_insert_state() {
     let mut trie: Trie<Blake2b512> = Trie::new();
-    assert!(trie.insert("hello", &[0]).is_err());
+    assert!(trie.insert("hello_world !! 12345", &[0]).is_ok());
 }
 
 #[test]
