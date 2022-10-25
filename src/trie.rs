@@ -51,13 +51,13 @@ impl<I: Sized + Clone> ChildNode<I> {
         } else {
         // Alas if we have not found a node then we must create our new recursive node and keep the existing data.
             if key_len > 1 {
+                // Here we instantiate the new optional nodes and set the key to the new node.
                 let mut new_node = ChildNode::new( 
                     key[0],
                     None
                 );
                 // Again we must continue recursion on the new node until key is len 1.
                     let _ = new_node.insert(&key[1..], data)?;
-                // Here we instantiate the new optional nodes and set the key to the new node.
                 // This is done after recursion because we need that node to be populated with the nested nodes within it.
                 self.nodes[key[0] as usize] = Some(new_node);
             } else {
@@ -133,11 +133,13 @@ impl <T: Digest, I: Sized + Clone> Trie<T, I> {
         let hash_bytes = hasher.finalize();
 
         // Compute the "decimal index representation of hex", a necessary evil for the behaivour of the hex trie .
-        let index_representation = get_index_rep_of_hex(hash_bytes.as_slice());
-        self.root.get(&index_representation.as_slice())
+        let index_of_hex = get_index_rep_of_hex(hash_bytes.as_slice());
+        self.root.get(&index_of_hex.as_slice())
     }
 
     fn remove(key: &[u8]) -> Result<(), ()> {
+
+
         Ok(())
     }
 
@@ -153,7 +155,10 @@ fn get_index_rep_of_hex(hash: &[u8]) -> Vec<u8> {
     .iter()
     .flat_map(|num| {
         // This will return the index related to the hex digit
-        // i.e 255d = 0xff == 15,15, 10d = 0x0A = 00,10, 100d = 0x56 = 05,06 
+        // Decimal | Hex | index
+        // 255 = 0xff == 15,15,
+        // 10 = 0x0A = 00,10,
+        // 100 = 0x56 = 05,06, 
             decimal_to_hex_index(*num)
     }).collect::<Vec<u8>>()
 }
@@ -163,13 +168,26 @@ fn decimal_to_hex_index(decimal: u8) -> [u8; 2] {
     [decimal / 16u8, decimal % 16u8]
 }
 
+fn hash_me<T: Digest>(input: &[u8]) -> &[u8] {
+    todo!();
+}
 
 #[test]
-fn test_insert_and_retrieve_single() {
-    let mut trie: Trie<Blake2b512, u16> = Trie::new();
-    assert!(trie.insert("hello_world !! 12345", 60u16).is_ok());
+fn test_insert_and_retrieve_spam() {
+    let mut trie: Trie<Blake2b512, u64> = Trie::new();
+
+    for c in 1..1000 {
+        trie.insert(c.to_string().as_str(), c % 8);
+    }
+
+    for c in 1..1000 {
+        assert_eq!(trie.get(c.to_string().as_str()), Ok(c % 8));
+    }
+
+    assert!(trie.insert("hello_world !! 12345", 60u64).is_ok());
     let res = trie.get("hello_world !! 12345");
-    assert_eq!(res, Ok(60u16));
+
+    assert_eq!(res, Ok(60u64));
 }
 
 
