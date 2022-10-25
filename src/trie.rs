@@ -6,6 +6,11 @@ use digest::generic_array::functional::FunctionalSequence;
 use std::mem::*;
 
 
+#[derive(Debug, PartialEq)]
+enum TrieError {
+    KeyDoesNotExist,
+    ExpectedLeafGotBranch,
+}
 
 #[derive(Debug)]
 pub struct ChildNode<I: Sized + Clone> {
@@ -33,16 +38,15 @@ impl<I: Sized + Clone> ChildNode<I> {
         // Check to see if the node exists in the children.
         // If it does recurse deeper.
         let key_len = key.len(); 
-        if  self.nodes[key[0] as usize].is_some() {
-
+        if self.nodes[key[0] as usize].is_some() {
             if key_len > 1 {
-                let _ = self.nodes[key[0] as usize]
+                self.nodes[key[0] as usize]
                 .as_mut()
                 .expect("node has been found; qed")
                 .insert(&key[1..], data)?;
             } else {
+                // Leaf node exists, edit.
                 self.nodes[key[0] as usize].as_mut().expect("node has been found; qed").node_type = NodeType::<I>::Leaf(data.clone());
-                // leaf node exists, edit
             }
         } else {
         // Alas if we have not found a node then we must create our new recursive node and keep the existing data.
@@ -57,7 +61,7 @@ impl<I: Sized + Clone> ChildNode<I> {
                 // This is done after recursion because we need that node to be populated with the nested nodes within it.
                 self.nodes[key[0] as usize] = Some(new_node);
             } else {
-                // leaf node does not exit, create
+                // Leaf node does not exit, create.
                 let new_node = ChildNode::new( 
                     key[0],
                     Some(data.clone())
@@ -66,6 +70,22 @@ impl<I: Sized + Clone> ChildNode<I> {
             }
         }
         Ok(())
+    }
+
+    fn get(&self, key: &[u8]) -> Result<I, TrieError> {
+        if let Some(node) = &self.nodes[key[0] as usize] {
+            if key.len() > 1 {
+                node.get(&key[1..])
+            } else {
+                match &node.node_type {
+                    NodeType::Leaf(data) => return Ok(data.clone()),
+                    _ => return Err(TrieError::ExpectedLeafGotBranch)
+                }
+            }
+        } else {
+            return Err(TrieError::KeyDoesNotExist)
+        }
+
     }
 }
 
@@ -98,28 +118,23 @@ impl <T: Digest, I: Sized + Clone> Trie<T, I> {
         let hash_bytes = hasher.finalize();
 
         // Compute the "decimal index representation of hex", a necessary evil for the behaivour of the hex trie .
-        let index_representation = hash_bytes.as_slice()
-        .iter()
-        .flat_map(|num| {
-            // This will return the index related to the hex digit
-            // i.e 255d = 0xff == 15,15, 10d = 0x0A = 00,10, 100d = 0x56 = 05,06 
-                decimal_to_hex_index(*num)
-        }).collect::<Vec<u8>>();
-        dbg!(&index_representation);
+        let index_representation = get_index_rep_of_hex(hash_bytes.as_slice());
 
-        // Each byte is a node.
-        let sum: u16 =  index_representation.iter().map(|n|*n as u16).sum();
         self.root.insert(
-        index_representation.as_slice(),
-        &data,
-    )  
+            index_representation.as_slice(),
+            &data,
+        )  
     }
 
-   
+    fn get(&self, key: &str) -> Result<I, TrieError> {
+        // Todo: pop into an fn 25/10/22
+        let mut hasher = T::new();
+        hasher.update(key.as_bytes());
+        let hash_bytes = hasher.finalize();
 
-    fn get(&mut self, key: &[u8]) -> Result<(), ()> {
-
-        todo!()
+        // Compute the "decimal index representation of hex", a necessary evil for the behaivour of the hex trie .
+        let index_representation = get_index_rep_of_hex(hash_bytes.as_slice());
+        self.root.get(&index_representation.as_slice())
     }
 
     fn remove(key: &[u8]) -> Result<(), ()> {
@@ -132,16 +147,38 @@ impl <T: Digest, I: Sized + Clone> Trie<T, I> {
     }
 }
 
+// Helper Function
+fn get_index_rep_of_hex(hash: &[u8]) -> Vec<u8> {
+    hash
+    .iter()
+    .flat_map(|num| {
+        // This will return the index related to the hex digit
+        // i.e 255d = 0xff == 15,15, 10d = 0x0A = 00,10, 100d = 0x56 = 05,06 
+            decimal_to_hex_index(*num)
+    }).collect::<Vec<u8>>()
+}
 
 // for numbers below 255 only
 fn decimal_to_hex_index(decimal: u8) -> [u8; 2] {
     [decimal / 16u8, decimal % 16u8]
 }
 
+
 #[test]
-fn test_insert_state() {
-    let mut trie: Trie<Blake2b512, u32> = Trie::new();
-    assert!(trie.insert("hello_world !! 12345", 60u32).is_ok());
+fn test_insert_and_retrieve_single() {
+    let mut trie: Trie<Blake2b512, u16> = Trie::new();
+    assert!(trie.insert("hello_world !! 12345", 60u16).is_ok());
+    let res = trie.get("hello_world !! 12345");
+    assert_eq!(res, Ok(60u16));
+}
+
+
+#[test]
+fn test_retrive_nothing_errs() {
+    let mut trie: Trie<Blake2b512, u16> = Trie::new();
+    assert!(trie.insert("hello_world !! 12345", 60u16).is_ok());
+    let res = trie.get("hello_world !!12345");
+    assert_eq!(res, Err(TrieError::KeyDoesNotExist));
 }
 
 #[test]
