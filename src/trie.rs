@@ -10,7 +10,7 @@ use std::convert::AsRef;
 
 
 #[derive(Debug, PartialEq)]
-enum TrieError {
+pub enum TrieError {
     KeyDoesNotExist,
     ExpectedLeafGotBranch,
 }
@@ -114,7 +114,7 @@ where
     I: Sized + Clone,
     K: Sized + AsRef<[u8]>,
  {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             root: ChildNode::new(0, None),
             phantom_k: PhantomData,
@@ -122,7 +122,7 @@ where
         }
     }
 
-    fn insert(&mut self, key: K, data: I) -> Result<(), ()> {
+    pub fn insert(&mut self, key: K, data: I) -> Result<(), ()> {
         let hash_bytes = hash_me::<T, K>(key);
         // Compute the "decimal index representation of hex", a necessary evil for the behaivour of the hex trie .
         let index_representation = get_index_rep_of_hex(hash_bytes.as_slice());
@@ -133,7 +133,7 @@ where
         )  
     }
 
-    fn get(&self, key: K) -> Result<I, TrieError> {
+    pub fn get(&self, key: K) -> Result<I, TrieError> {
         let hash_bytes = hash_me::<T, K>(key);
 
         // Compute the "decimal index representation of hex", a necessary evil for the behaivour of the hex trie .

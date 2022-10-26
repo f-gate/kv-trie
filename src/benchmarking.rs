@@ -1,32 +1,23 @@
-#![feature(test)]
-
-extern crate test;
-
-pub fn add_two(a: i32) -> i32 {
-    a + 2
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test::Bencher;
+    use crate::Trie;
+    use blake2::Blake2b512;
 
+    #[test]
+    fn bench_add_two() {
+        let mut trie: Trie<Blake2b512, u64, &str> = Trie::new();
 
-    #[bench]
-    fn bench_add_two(b: &mut Bencher) {
-        b.iter(|| add_two(2));
+        use std::time::Instant;
+            let now = Instant::now();
+
+    {
+        trie.insert("hello_world !! 12345", 60u64);
     }
 
-    #[bench]
-    fn  bench_insert_1000(b: &mut Bencher) {
-        b.iter(|| {
-            // Use `test::black_box` to prevent compiler optimizations from disregarding
-            // Unused values
-            test::black_box (
-                for c in 1..1000 {
-                    trie.insert(c.to_string().as_str(), c);
-                }
-            );
-        });
+    let elapsed = now.elapsed();
+        println!("Elapsed: {:.2?}", elapsed);
     }
+
 }
