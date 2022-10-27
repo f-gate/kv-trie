@@ -5,10 +5,6 @@ use core::marker::PhantomData;
 
 
 
-use std::convert::AsRef;
-
-
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum TrieError {
     KeyDoesNotExist,
@@ -96,7 +92,7 @@ pub enum NodeType<T> {
 
 /// The trie, currently programmed as base 16.
 /// Uses the hash on the key inputted to compute a place in storage.
-pub struct Trie<T: Digest, I: Sized + Clone, K: Sized + AsRef<[u8]>> {
+pub struct Trie<T: Digest, K: Sized, I: Sized + Clone> {
     root: ChildNode<I>,
     phantom_t: PhantomData<T>,
     phantom_k: PhantomData<K>,
@@ -104,11 +100,11 @@ pub struct Trie<T: Digest, I: Sized + Clone, K: Sized + AsRef<[u8]>> {
 
 // Where T is the hasher and I is the data.
 // K is the key 
-impl<T, I, K> Trie<T, I, K>
+impl<T, K, I> Trie<T, K, I>
 where
     T: Digest,
+    K: Sized,
     I: Sized + Clone,
-    K: Sized + AsRef<[u8]>,
  {
     pub fn new() -> Self {
         Self {
@@ -170,17 +166,26 @@ fn decimal_to_hex_index(decimal: u8) -> [u8; 2] {
     [decimal / 16u8, decimal % 16u8]
 }
 
-fn hash_me<T: Digest, K: Sized + AsRef<[u8]>>(input: K) -> Output<T> {
-    let mut hasher = T::new();
-    hasher.update(input);
-    hasher.finalize()
+fn hash_me<T: Digest, K: Sized>(input: K) -> Output<T> {
+// If something wierd is happening question this and go to
+// https://stackoverflow.com/questions/28127165/how-to-convert-struct-to-u8
+    unsafe {
+        let slice = std::slice::from_raw_parts(
+            (&input as *const K) as *const u8,
+            std::mem::size_of::<K>()
+        );
+        let mut hasher = T::new();
+        hasher.update(slice);
+        hasher.finalize()
+    }   
 }
+    
 
 #[test]
 fn test_insert_and_retrieve_spam() {
-    let mut trie: Trie<Blake2b512, u64, &str> = Trie::new();
-    assert!(trie.insert("hello_world !! 12345", 60u64).is_ok());
-    let res = trie.get("hello_world !! 12345");
+    let mut trie: Trie<Blake2b512, f32, u64> = Trie::new();
+    assert!(trie.insert(1000f32, 60u64).is_ok());
+    let res = trie.get(1000f32);
 
     assert_eq!(res, Ok(60u64));
 }
@@ -188,8 +193,8 @@ fn test_insert_and_retrieve_spam() {
 
 #[test]
 fn test_retrive_nothing_errs() {
-    let mut trie: Trie<Blake2b512, u16, &str> = Trie::new();
-    assert!(trie.insert("hello_world !! 12345", 60u16).is_ok());
+    let mut trie: Trie<Blake2b512, &str, f32> = Trie::new();
+    assert!(trie.insert("hello", 60f32).is_ok());
     let res = trie.get("hello_world !!12345");
     assert_eq!(res, Err(TrieError::KeyDoesNotExist));
 }

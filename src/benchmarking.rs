@@ -4,7 +4,7 @@
     use blake2::Blake2b512;
     
     pub fn bench_get() {
-        let mut trie: Trie<Blake2b512, u64, &str> = Trie::new();
+        let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
         let _ = trie.insert("hello_world !! 12345", 60u64);
         use std::time::Instant;
         let now = Instant::now();
@@ -17,7 +17,7 @@
     }
         
     pub fn bench_insert() {
-        let mut trie: Trie<Blake2b512, u64, &str> = Trie::new();
+        let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
         use std::time::Instant;
         let now = Instant::now();
         {
@@ -36,7 +36,7 @@
 
 
     pub fn insert_crazy() {
-        let mut trie: Trie<Blake2b512, u64, &str> = Trie::new();
+        let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
         use std::time::Instant;
         let now = Instant::now();
         let input: Vec<String> = (0..10000).into_iter().map(|i| {
