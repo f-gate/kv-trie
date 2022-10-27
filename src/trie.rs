@@ -1,15 +1,15 @@
 use digest::*;
 use blake2::*;
 use core::marker::PhantomData;
-use hex_literal::hex;
-use digest::generic_array::functional::FunctionalSequence;
-use std::mem::*;
-use crate::trie::generic_array::GenericArray;
+
+
+
+
 use std::convert::AsRef;
 
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum TrieError {
     KeyDoesNotExist,
     ExpectedLeafGotBranch,
@@ -17,7 +17,6 @@ pub enum TrieError {
 
 #[derive(Debug)]
 pub struct ChildNode<I: Sized + Clone> {
-    value: u8,
     // Boxed due to recursive type.
     nodes: Box<[Option<ChildNode<I>>; 16]>,
     node_type: NodeType<I>,
@@ -25,13 +24,12 @@ pub struct ChildNode<I: Sized + Clone> {
 
 impl<I: Sized + Clone> ChildNode<I> {
     // Create a empty which is of type branch.
-    fn new(value: u8, maybe_type: Option<I>) -> ChildNode<I> {
+    fn new(maybe_type: Option<I>) -> ChildNode<I> {
         let mut node_type = NodeType::Branch;
         if maybe_type.is_some() {
             node_type = NodeType::Leaf(maybe_type.expect("is_some() is called above; qed"));
         }
         Self {
-            value,
             nodes: Box::new([None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]),
             node_type
         }
@@ -56,17 +54,15 @@ impl<I: Sized + Clone> ChildNode<I> {
             if key_len > 1 {
                 // Here we instantiate the new optional nodes and set the key to the new node.
                 let mut new_node = ChildNode::new( 
-                    key[0],
                     None
                 );
                 // Again we must continue recursion on the new node until key is len 1.
-                    let _ = new_node.insert(&key[1..], data)?;
+                    new_node.insert(&key[1..], data)?;
                 // This is done after recursion because we need that node to be populated with the nested nodes within it.
                 self.nodes[key[0] as usize] = Some(new_node);
             } else {
                 // Leaf node does not exit, create.
                 let new_node = ChildNode::new( 
-                    key[0],
                     Some(data.clone())
                 );
                 self.nodes[key[0] as usize] = Some(new_node);
@@ -81,12 +77,12 @@ impl<I: Sized + Clone> ChildNode<I> {
                 node.get(&key[1..])
             } else {
                 match &node.node_type {
-                    NodeType::Leaf(data) => return Ok(data.clone()),
-                    _ => return Err(TrieError::ExpectedLeafGotBranch)
+                    NodeType::Leaf(data) => Ok(data.clone()),
+                    _ => Err(TrieError::ExpectedLeafGotBranch)
                 }
             }
         } else {
-            return Err(TrieError::KeyDoesNotExist)
+            Err(TrieError::KeyDoesNotExist)
         }
 
     }
@@ -116,7 +112,7 @@ where
  {
     pub fn new() -> Self {
         Self {
-            root: ChildNode::new(0, None),
+            root: ChildNode::new(None),
             phantom_k: PhantomData,
             phantom_t: PhantomData,
         }
@@ -138,17 +134,17 @@ where
 
         // Compute the "decimal index representation of hex", a necessary evil for the behaivour of the hex trie .
         let index_of_hex = get_index_rep_of_hex(hash_bytes.as_slice());
-        self.root.get(&index_of_hex.as_slice())
+        self.root.get(index_of_hex.as_slice())
     }
 
-    fn remove(key: &[u8]) -> Result<(), ()> {
+    fn _remove(_key: &[u8]) -> Result<(), ()> {
 
 
         Ok(())
     }
 
     // An idea to add patricia trie optimisation.
-    fn optimise_patricia() -> (){
+    fn _optimise_patricia(){
         todo!()
     }
 }
@@ -183,16 +179,6 @@ fn hash_me<T: Digest, K: Sized + AsRef<[u8]>>(input: K) -> Output<T> {
 #[test]
 fn test_insert_and_retrieve_spam() {
     let mut trie: Trie<Blake2b512, u64, &str> = Trie::new();
-
-    //for c in 1..1000u64 {
-    //    let a = c.clone().to_string().as_str();
-    //    trie.insert(&a, c % 8);
-    //}
-//
-    //for c in 1..1000u64 {
-    //    assert_eq!(trie.get(c.to_string().as_str()), Ok(c % 8));
-    //}
-
     assert!(trie.insert("hello_world !! 12345", 60u64).is_ok());
     let res = trie.get("hello_world !! 12345");
 

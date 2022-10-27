@@ -1,15 +1,15 @@
 
-    use super::*;
+    
     use crate::Trie;
     use blake2::Blake2b512;
-    use core::time::Duration;
+    
     pub fn bench_get() {
         let mut trie: Trie<Blake2b512, u64, &str> = Trie::new();
-        trie.insert("hello_world !! 12345", 60u64);
+        let _ = trie.insert("hello_world !! 12345", 60u64);
         use std::time::Instant;
         let now = Instant::now();
     {
-        trie.get("hello_world !! 12345");
+        let _ = trie.get("hello_world !! 12345");
     }
     
     let elapsed = now.elapsed();
@@ -21,14 +21,14 @@
         use std::time::Instant;
         let now = Instant::now();
         {
-            trie.insert("hello_world !! 12345", 60u64);
+            let _ = trie.insert("hello_world !! 12345", 60u64);
         }
         let elapsed = now.elapsed();
         println!("Insert() elapsed: {:.2?}", elapsed);
 
         let now = Instant::now();
         {
-            trie.insert("hello_world !! 12345", 60u64);
+            let _ = trie.insert("hello_world !! 12345", 60u64);
         }
         let elapsed = now.elapsed();
         println!("Second insert to same key() elapsed: {:.2?}", elapsed);
@@ -45,7 +45,7 @@
         {
             (0..10000u64).into_iter().map(|i| {
 
-                trie.insert(&input[i as usize].as_str(), 100000000u64);
+                let _ = trie.insert(input[i as usize].as_str(), 100000000u64);
             }).collect::<_>()
             
         }
