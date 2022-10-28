@@ -2,16 +2,15 @@ use digest::*;
 use blake2::*;
 use core::marker::PhantomData;
 
-
-
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum TrieError {
     KeyDoesNotExist,
     ExpectedLeafGotBranch,
 }
 
-#[derive(Debug)]
+// Todo, we need this to be as small as possible.
+// Store data elsewhere? like a hashmap?
+// Or remove the need for option somehow.
 pub struct ChildNode<I: Sized + Clone> {
     // Boxed due to recursive type.
     nodes: Box<[Option<ChildNode<I>>; 16]>,
@@ -57,7 +56,7 @@ impl<I: Sized + Clone> ChildNode<I> {
                 // This is done after recursion because we need that node to be populated with the nested nodes within it.
                 self.nodes[key[0] as usize] = Some(new_node);
             } else {
-                // Leaf node does not exit, create.
+                // Leaf node does not exist, create.
                 let new_node = ChildNode::new( 
                     Some(data.clone())
                 );
@@ -67,6 +66,7 @@ impl<I: Sized + Clone> ChildNode<I> {
         Ok(())
     }
 
+    // Recurse up to the leaf node and return the element.
     fn get(&self, key: &[u8]) -> Result<I, TrieError> {
         if let Some(node) = &self.nodes[key[0] as usize] {
             if key.len() > 1 {
@@ -81,6 +81,15 @@ impl<I: Sized + Clone> ChildNode<I> {
             Err(TrieError::KeyDoesNotExist)
         }
 
+    }
+
+    fn remove(&mut self, key: &[u8]) -> Result<(), TrieError> {
+        // Go and find the leaf node
+        // If found then recurse up the tree deleting either:
+        // 1: The entire node if there is no other nodes associated and continue recursion.
+        // 2: Just the associated node if there is other nodes and return Ok(())  
+
+        Ok(())
     }
 }
 
@@ -159,8 +168,6 @@ fn get_index_rep_of_hex(hash: &[u8]) -> Vec<u8> {
     }).collect::<Vec<u8>>()
 }
 
- 
-
 // for numbers below 255 only
 fn decimal_to_hex_index(decimal: u8) -> [u8; 2] {
     [decimal / 16u8, decimal % 16u8]
@@ -179,17 +186,24 @@ fn hash_me<T: Digest, K: Sized>(input: K) -> Output<T> {
         hasher.finalize()
     }   
 }
-    
 
 #[test]
 fn test_insert_and_retrieve_spam() {
-    let mut trie: Trie<Blake2b512, f32, u64> = Trie::new();
-    assert!(trie.insert(1000f32, 60u64).is_ok());
-    let res = trie.get(1000f32);
+    let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
 
-    assert_eq!(res, Ok(60u64));
+    let max: u64 = 10_000;
+    let input: Vec<String> = (0..max).into_iter().map(|i| {
+        i.to_string()
+    }).collect();
+    let _ = (0..max).into_iter().map(|i| {
+        let _ = trie.insert(input[i as usize].as_str(), i);
+    }).collect::<()>();
+    
+    let _ = (0..max).into_iter().map(|i| {
+        let res = trie.get(input[i as usize].as_str());
+        assert_eq!(res, Ok(i));
+    }).collect::<()>();
 }
-
 
 #[test]
 fn test_retrive_nothing_errs() {
@@ -199,8 +213,4 @@ fn test_retrive_nothing_errs() {
     assert_eq!(res, Err(TrieError::KeyDoesNotExist));
 }
 
-#[test]
-fn test_hex() {
 
-
-}
