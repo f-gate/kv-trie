@@ -6,7 +6,8 @@ None if it is meant to be exceptionally quick or efficient but i will try to mai
 
 
 
-V2 benchmarks 30/10/22 {
+```
+V2 benchmarks 30/10/22  {
     Speed Benchmarks:
         Insert elapsed: 111.36µs
         Second insert to same key() elapsed: 43.90µs
@@ -37,5 +38,3 @@ V2 benchmarks 30/10/22 {
         93.75% wasted 
     }
 }
-
-
