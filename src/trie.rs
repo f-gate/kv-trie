@@ -1,8 +1,7 @@
 use digest::*;
 use blake2::*;
 use core::marker::PhantomData;
-
-
+use std::ops::Deref;
 
 
 #[derive(Debug, PartialEq, Eq)]
@@ -14,65 +13,71 @@ pub enum TrieError {
 #[derive(Debug)]
 pub struct ChildNode<I: Sized + Clone> {
     // Boxed due to recursive type.
-    nodes: Box<[Option<ChildNode<I>>; 16]>,
-    node_type: NodeType<I>,
+    index_value: u8,
+    pub nodes: Box<Vec<ChildNode<I>>>,
+    pub node_type: NodeType<I>,
 }
 
 impl<I: Sized + Clone> ChildNode<I> {
-    // Create a empty which is of type branch.
-    fn new(maybe_type: Option<I>) -> ChildNode<I> {
-        let mut node_type = NodeType::Branch;
-        if maybe_type.is_some() {
-            node_type = NodeType::Leaf(maybe_type.expect("is_some() is called above; qed"));
-        }
+
+    fn new_branch(index_value: u8) -> ChildNode<I> {
         Self {
-            nodes: Box::new([None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]),
-            node_type
+            nodes: Box::new(vec![]),
+            node_type: NodeType::Branch,
+            index_value,
+        }
+    }
+    fn new_leaf(index_value: u8, data: I) -> ChildNode<I> {
+        Self {
+            nodes: Box::new(vec![]),
+            node_type: NodeType::Leaf(data),
+            index_value,
         }
     }
 
     fn insert(&mut self, key: &[u8], data: &I) -> Result<(), ()> {
         // Check to see if the node exists in the children.
         // If it does recurse deeper.
-        let key_len = key.len(); 
-        if self.nodes[key[0] as usize].is_some() {
+        let key_len = key.len();
+        let maybe_position = self.nodes.deref().iter().position(|n| {
+            n.index_value == key[0]
+        });
+
+        if let Some(i) = maybe_position {
             if key_len > 1 {
-                self.nodes[key[0] as usize]
-                .as_mut()
-                .expect("node has been found; qed")
+                self.nodes[i]
                 .insert(&key[1..], data)?;
             } else {
                 // Leaf node exists, edit.
-                self.nodes[key[0] as usize].as_mut().expect("node has been found; qed").node_type = NodeType::<I>::Leaf(data.clone());
+                self.nodes[i].node_type = NodeType::<I>::Leaf(data.clone());
             }
         } else {
         // Alas if we have not found a node then we must create our new recursive node and keep the existing data.
             if key_len > 1 {
                 // Here we instantiate the new optional nodes and set the key to the new node.
-                let mut new_node = ChildNode::new( 
-                    None
-                );
+                let mut new_node = ChildNode::new_branch(key[0]);
                 // Again we must continue recursion on the new node until key is len 1.
                     new_node.insert(&key[1..], data)?;
                 // This is done after recursion because we need that node to be populated with the nested nodes within it.
-                self.nodes[key[0] as usize] = Some(new_node);
+                self.nodes.push(new_node);
             } else {
                 // Leaf node does not exit, create.
-                let new_node = ChildNode::new( 
-                    Some(data.clone())
+                let new_node = ChildNode::new_leaf( 
+                    key[0],
+                    data.clone(),
                 );
-                self.nodes[key[0] as usize] = Some(new_node);
+                self.nodes.push(new_node);
             }
         }
         Ok(())
     }
 
     fn get(&self, key: &[u8]) -> Result<I, TrieError> {
-        if let Some(node) = &self.nodes[key[0] as usize] {
+        if let Some(pos) = &self.nodes.iter().position(|n| n.index_value == key[0]) {
             if key.len() > 1 {
-                node.get(&key[1..])
+                self.nodes[*pos].get(&key[1..])
             } else {
-                match &node.node_type {
+                match &self.nodes[*pos].node_type {
                     NodeType::Leaf(data) => Ok(data.clone()),
                     _ => Err(TrieError::ExpectedLeafGotBranch)
                 }
@@ -84,7 +89,7 @@ impl<I: Sized + Clone> ChildNode<I> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum NodeType<T> {
     Leaf(T),
     Branch,
@@ -93,7 +98,7 @@ pub enum NodeType<T> {
 /// The trie, currently programmed as base 16.
 /// Uses the hash on the key inputted to compute a place in storage.
 pub struct Trie<T: Digest, K: Sized, I: Sized + Clone> {
-    root: ChildNode<I>,
+    pub root: ChildNode<I>,
     phantom_t: PhantomData<T>,
     phantom_k: PhantomData<K>,
 }
@@ -108,7 +113,7 @@ where
  {
     pub fn new() -> Self {
         Self {
-            root: ChildNode::new(None),
+            root: ChildNode::new_branch(0),
             phantom_k: PhantomData,
             phantom_t: PhantomData,
         }
