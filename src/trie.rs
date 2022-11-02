@@ -87,17 +87,17 @@ impl<I: Sized + Clone> ChildNode<I> {
         }
     }
 
-    fn remove(&mut self, key: &[u8]) -> Result<(VecDeque<u8>, bool), TrieError> {
+    fn remove(&mut self, key: &[u8], key_len: usize) -> Result<bool, TrieError> {
         // recurse to leaf
-        let mut tuple = (VecDeque::new(), false);
+        let mut flag_for_deletion = false;
         if let Some(pos) = &self.nodes.iter().position(|n| n.index_value == key[0]) {
             if key.len() > 1 {
-                tuple = self.nodes[*pos].remove(&key[1..])?;
+                flag_for_deletion = self.nodes[*pos].remove(&key[1..], key_len)?;
             } else {
                 match &self.nodes[*pos].node_type {
                     NodeType::Leaf(_) => {
                         // Push onto res for deletion
-                        return Ok((VecDeque::from([self.nodes[*pos].index_value]), false))
+                        return Ok(false)
                     },
                     _ => return Err(TrieError::ExpectedLeafGotBranch)
                 }
@@ -105,32 +105,27 @@ impl<I: Sized + Clone> ChildNode<I> {
             // This is carnage, i apologise to any poor soul who has ventured here.
             // recurse up till you find a node with > 1 child nodes
             if &self.nodes.len() == &1usize  {
-
-                if tuple.1 == false {
-                    tuple.0.push_front(self.nodes[*pos].index_value);
-                }
-                if tuple.0 == key {
+                if key.len() == key_len  {
                     dbg!("called");
                     let _ = self.nodes.remove(*pos);
                 }
-                return Ok(tuple);
+                return Ok(flag_for_deletion);
             } else {
                 // delete if bool is false
                 // set bool to true
-                if tuple.1 == false {
+                if flag_for_deletion == false {
                     // drop the node from there.
-                    dbg!("called");
                     let _ = self.nodes.remove(*pos);
-                    tuple.1 = true;
-                    return Ok(tuple);
+                    flag_for_deletion = true;
+
+                    return Ok(flag_for_deletion);
                 } else {
-                    return Ok(tuple);
+                    return Ok(flag_for_deletion);
                 }
             }
         } else {
             return Err(TrieError::KeyDoesNotExist);
         }
-        Ok(tuple)
     }
 
 }
@@ -183,11 +178,11 @@ where
         self.root.get(index_of_hex.as_slice())
     }
 
-    pub fn remove(&mut self, key: K) -> Result<(VecDeque<u8>, bool), TrieError> {
+    pub fn remove(&mut self, key: K) -> Result<bool, TrieError> {
         let hash_bytes = hash_me::<T, K>(key);
 
         let index_of_hex = get_index_rep_of_hex(hash_bytes.as_slice());
-        self.root.remove(index_of_hex.as_slice())
+        self.root.remove(index_of_hex.as_slice(), index_of_hex.len())
     }
 
     fn write_to_disk() {
@@ -261,8 +256,12 @@ fn test_insert_and_remove() {
     assert!(trie.remove(1000f32).is_ok());
     let res = trie.get(1000f32);
     dbg!(&res);
-    assert!(res.is_err());
-
+    if let Err(e) = res {
+        dbg!(&e);
+        assert!(e == TrieError::KeyDoesNotExist);
+    } else { 
+        assert!(false);
+    }
 }
 
 
