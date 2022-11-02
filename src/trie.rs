@@ -2,7 +2,7 @@ use digest::*;
 use blake2::*;
 use core::marker::PhantomData;
 use std::ops::Deref;
-
+use std::collections::VecDeque;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TrieError {
@@ -87,17 +87,17 @@ impl<I: Sized + Clone> ChildNode<I> {
         }
     }
 
-    fn remove(&mut self, key: &[u8]) -> Result<(Vec<u8>, bool), TrieError> {
+    fn remove(&mut self, key: &[u8]) -> Result<(VecDeque<u8>, bool), TrieError> {
         // recurse to leaf
-        let mut res = Err(TrieError::KeyDoesNotExist);
+        let mut tuple = (VecDeque::new(), false);
         if let Some(pos) = &self.nodes.iter().position(|n| n.index_value == key[0]) {
             if key.len() > 1 {
-                res = self.nodes[*pos].remove(&key[1..]);
+                tuple = self.nodes[*pos].remove(&key[1..])?;
             } else {
                 match &self.nodes[*pos].node_type {
                     NodeType::Leaf(_) => {
                         // Push onto res for deletion
-                        return Ok((vec![self.nodes[*pos].index_value], false))
+                        return Ok((VecDeque::from([self.nodes[*pos].index_value]), false))
                     },
                     _ => return Err(TrieError::ExpectedLeafGotBranch)
                 }
@@ -105,30 +105,32 @@ impl<I: Sized + Clone> ChildNode<I> {
             // This is carnage, i apologise to any poor soul who has ventured here.
             // recurse up till you find a node with > 1 child nodes
             if &self.nodes.len() == &1usize  {
-                if let Ok(mut tuple) = res {
-                    if tuple.1 == false {
-                        tuple.0.push(self.nodes[*pos].index_value);
-                    }
-                    return Ok(tuple);
+
+                if tuple.1 == false {
+                    tuple.0.push_front(self.nodes[*pos].index_value);
                 }
+                if tuple.0 == key {
+                    dbg!("called");
+                    let _ = self.nodes.remove(*pos);
+                }
+                return Ok(tuple);
             } else {
                 // delete if bool is false
                 // set bool to true
-                if let Ok(mut tuple) = res {
-                    if tuple.1 == false {
-                        // drop the node from there.
-                        drop(&self.nodes[*pos]);
-                        tuple.1 = true;
-                        return Ok(tuple);
-                    } else {
-                        return Ok(tuple);
-                    }
+                if tuple.1 == false {
+                    // drop the node from there.
+                    dbg!("called");
+                    let _ = self.nodes.remove(*pos);
+                    tuple.1 = true;
+                    return Ok(tuple);
+                } else {
+                    return Ok(tuple);
                 }
             }
         } else {
-            return res;
+            return Err(TrieError::KeyDoesNotExist);
         }
-        res
+        Ok(tuple)
     }
 
 }
@@ -181,7 +183,7 @@ where
         self.root.get(index_of_hex.as_slice())
     }
 
-    pub fn remove(&mut self, key: K) -> Result<(Vec<u8>, bool), TrieError> {
+    pub fn remove(&mut self, key: K) -> Result<(VecDeque<u8>, bool), TrieError> {
         let hash_bytes = hash_me::<T, K>(key);
 
         let index_of_hex = get_index_rep_of_hex(hash_bytes.as_slice());
@@ -257,7 +259,9 @@ fn test_insert_and_remove() {
     let mut trie: Trie<Blake2b512, f32, u64> = Trie::new();
     assert!(trie.insert(1000f32, 60u64).is_ok());
     assert!(trie.remove(1000f32).is_ok());
-    assert!(trie.get(1000f32).is_err());
+    let res = trie.get(1000f32);
+    dbg!(&res);
+    assert!(res.is_err());
 
 }
 
