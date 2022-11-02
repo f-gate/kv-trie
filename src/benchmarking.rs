@@ -67,7 +67,7 @@
                 let _ = trie.insert(input[i as usize].as_str(), num);
         }).collect::<()>();
 
-        let size = (std::mem::size_of::<ChildNode<u64>>() as f32 / 1_000_000.0) as f32;
+        let _size = (std::mem::size_of::<ChildNode<u64>>() as f32 / 1_000_000.0) as f32;
         let res = recurse_to_find_branches(&trie.root);
         
         println!( "~ {} branches, {} leafs. After {} inserts.", res.0, res.1, num);

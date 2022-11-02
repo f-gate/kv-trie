@@ -85,8 +85,52 @@ impl<I: Sized + Clone> ChildNode<I> {
         } else {
             Err(TrieError::KeyDoesNotExist)
         }
-
     }
+
+    fn remove(&mut self, key: &[u8]) -> Result<(Vec<u8>, bool), TrieError> {
+        // recurse to leaf
+        let mut res = Err(TrieError::KeyDoesNotExist);
+        if let Some(pos) = &self.nodes.iter().position(|n| n.index_value == key[0]) {
+            if key.len() > 1 {
+                res = self.nodes[*pos].remove(&key[1..]);
+            } else {
+                match &self.nodes[*pos].node_type {
+                    NodeType::Leaf(_) => {
+                        // Push onto res for deletion
+                        return Ok((vec![self.nodes[*pos].index_value], false))
+                    },
+                    _ => return Err(TrieError::ExpectedLeafGotBranch)
+                }
+            }
+            // This is carnage, i apologise to any poor soul who has ventured here.
+            // recurse up till you find a node with > 1 child nodes
+            if &self.nodes.len() == &1usize  {
+                if let Ok(mut tuple) = res {
+                    if tuple.1 == false {
+                        tuple.0.push(self.nodes[*pos].index_value);
+                    }
+                    return Ok(tuple);
+                }
+            } else {
+                // delete if bool is false
+                // set bool to true
+                if let Ok(mut tuple) = res {
+                    if tuple.1 == false {
+                        // drop the node from there.
+                        drop(&self.nodes[*pos]);
+                        tuple.1 = true;
+                        return Ok(tuple);
+                    } else {
+                        return Ok(tuple);
+                    }
+                }
+            }
+        } else {
+            return res;
+        }
+        res
+    }
+
 }
 
 #[derive(Debug, PartialEq)]
@@ -133,15 +177,19 @@ where
     pub fn get(&self, key: K) -> Result<I, TrieError> {
         let hash_bytes = hash_me::<T, K>(key);
 
-        // Compute the "decimal index representation of hex", a necessary evil for the behaivour of the hex trie .
         let index_of_hex = get_index_rep_of_hex(hash_bytes.as_slice());
         self.root.get(index_of_hex.as_slice())
     }
 
-    fn _remove(_key: &[u8]) -> Result<(), ()> {
+    pub fn remove(&mut self, key: K) -> Result<(Vec<u8>, bool), TrieError> {
+        let hash_bytes = hash_me::<T, K>(key);
 
+        let index_of_hex = get_index_rep_of_hex(hash_bytes.as_slice());
+        self.root.remove(index_of_hex.as_slice())
+    }
 
-        Ok(())
+    fn write_to_disk() {
+        todo!()
     }
 
     // An idea to add patricia trie optimisation.
@@ -203,6 +251,16 @@ fn test_retrive_nothing_errs() {
     let res = trie.get("hello_world !!12345");
     assert_eq!(res, Err(TrieError::KeyDoesNotExist));
 }
+
+#[test]
+fn test_insert_and_remove() {
+    let mut trie: Trie<Blake2b512, f32, u64> = Trie::new();
+    assert!(trie.insert(1000f32, 60u64).is_ok());
+    assert!(trie.remove(1000f32).is_ok());
+    assert!(trie.get(1000f32).is_err());
+
+}
+
 
 #[test]
 fn test_hex() {
