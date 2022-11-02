@@ -1,6 +1,7 @@
 mod trie;
 mod benchmarking;
-
+mod childnode;
+mod utils;
 use trie::*;
 
 
