@@ -2,7 +2,6 @@ use digest::*;
 use blake2::*;
 use core::marker::PhantomData;
 use std::ops::Deref;
-use std::collections::VecDeque;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TrieError {
@@ -89,10 +88,10 @@ impl<I: Sized + Clone> ChildNode<I> {
 
     fn remove(&mut self, key: &[u8], key_len: usize) -> Result<bool, TrieError> {
         // recurse to leaf
-        let mut flag_for_deletion = false;
+        let mut flag = false;
         if let Some(pos) = &self.nodes.iter().position(|n| n.index_value == key[0]) {
             if key.len() > 1 {
-                flag_for_deletion = self.nodes[*pos].remove(&key[1..], key_len)?;
+                flag = self.nodes[*pos].remove(&key[1..], key_len)?;
             } else {
                 match &self.nodes[*pos].node_type {
                     NodeType::Leaf(_) => {
@@ -106,21 +105,21 @@ impl<I: Sized + Clone> ChildNode<I> {
             // recurse up till you find a node with > 1 child nodes
             if &self.nodes.len() == &1usize  {
                 if key.len() == key_len  {
-                    dbg!("called");
                     let _ = self.nodes.remove(*pos);
+                    flag = true;
                 }
-                return Ok(flag_for_deletion);
+                return Ok(flag);
             } else {
                 // delete if bool is false
                 // set bool to true
-                if flag_for_deletion == false {
+                if flag == false {
                     // drop the node from there.
                     let _ = self.nodes.remove(*pos);
-                    flag_for_deletion = true;
+                    flag = true;
 
-                    return Ok(flag_for_deletion);
+                    return Ok(flag);
                 } else {
-                    return Ok(flag_for_deletion);
+                    return Ok(flag);
                 }
             }
         } else {
@@ -245,28 +244,34 @@ fn test_insert_and_retrieve_spam() {
 fn test_retrive_nothing_errs() {
     let mut trie: Trie<Blake2b512, &str, f32> = Trie::new();
     assert!(trie.insert("hello", 60f32).is_ok());
-    let res = trie.get("hello_world !!12345");
-    assert_eq!(res, Err(TrieError::KeyDoesNotExist));
+    assert_eq!(trie.get("hello_world !!12345"), Err(TrieError::KeyDoesNotExist));
 }
 
 #[test]
 fn test_insert_and_remove() {
     let mut trie: Trie<Blake2b512, f32, u64> = Trie::new();
     assert!(trie.insert(1000f32, 60u64).is_ok());
+    assert_eq!(trie.get(1000f32).unwrap(), 60u64);
     assert!(trie.remove(1000f32).is_ok());
-    let res = trie.get(1000f32);
-    dbg!(&res);
-    if let Err(e) = res {
-        dbg!(&e);
-        assert!(e == TrieError::KeyDoesNotExist);
-    } else { 
-        assert!(false);
-    }
+    assert!(trie.get(1000f32).is_err());
 }
 
 
 #[test]
-fn test_hex() {
+fn test_remove_crazy() {
+    let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
+    let num = 10_000u64;
+    let input: Vec<String> = (0..num).into_iter().map(|i| {i.to_string()}).collect();
+
+    let _ =  (0..num).into_iter().map(|i| {
+
+        let _ = trie.insert(input[i as usize].as_str(), num);
+        let res = trie.remove(input[i as usize].as_str()); 
+        assert!(res.is_ok());
+
+        let res = trie.get(input[i as usize].as_str()); 
+        assert!(res.is_err());
+    }).collect::<()>();
 
 
 }

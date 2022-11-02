@@ -9,6 +9,8 @@ fn main() {
     benchmarking::bench_insert();
     benchmarking::bench_get();
     benchmarking::insert_crazy();
+    benchmarking::bench_removal_single();
+    benchmarking::remove_crazy();
 
     println!("\nStorage Benchmarks:");
     benchmarking::count_number_of_branches();
