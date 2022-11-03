@@ -82,11 +82,11 @@ impl<I: Sized + Clone> ChildNode<I> {
 
     pub fn remove(&mut self, key: &[u8], key_len: usize) -> Result<bool, TrieError> {
         // recurse to leaf
-        let mut flag = false;
+        let mut is_removed = false;
         if let Some(pos) = &self.nodes.iter().position(|n| n.index_value == key[0]) {
             if key.len() > 1 {
-                // Recurse to the leaf node and instantiate the flag for removal.
-                flag = self.nodes[*pos].remove(&key[1..], key_len)?;
+                // Recurse to the leaf node and instantiate the is_removed for removal.
+                is_removed = self.nodes[*pos].remove(&key[1..], key_len)?;
             } else {
                 match &self.nodes[*pos].node_type {
                     NodeType::Leaf(_) => {
@@ -98,26 +98,26 @@ impl<I: Sized + Clone> ChildNode<I> {
             }
             // We are looking for a node which has more than one childnode.
             // This is because that is the highest place we can remove the node.
-            // A flag is used to mark if this highest node has been found as to not remove again.
+            // A is_removed is used to mark if this highest node has been found as to not remove again.
             // Also the edge case is caught where there is always one node per branch.
             if &self.nodes.len() == &1usize  {
                 // Here we catch the edge case where we are at the root of the branch.
                 if key.len() == key_len  {
                     let _ = self.nodes.remove(*pos);
-                    flag = true;
+                    is_removed = true;
                 }
             } else {
                 // Here we have found a node with more than one child so we can delete that node.
-                if flag == false {
+                if is_removed == false {
                     // drop the node from there.
                     let _ = self.nodes.remove(*pos);
-                    flag = true;
+                    is_removed = true;
                 }
             }
         } else {
             return Err(TrieError::KeyDoesNotExist);
         }
-        Ok(flag)
+        Ok(is_removed)
     }
 
 }
