@@ -1,7 +1,7 @@
 
     
     use crate::{Trie, utils::*, childnode::*};
-
+    use std::time::Instant;
     use blake2::Blake2b512;
 
 
@@ -37,7 +37,6 @@
 
     pub fn insert_crazy() {
         let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
-        use std::time::Instant;
         let num = 10_000u64;
         let input: Vec<String> = (0..num).into_iter().map(|i| {
             i.to_string()
