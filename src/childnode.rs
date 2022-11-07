@@ -1,14 +1,14 @@
 
 
-use std::ops::Deref;
+
 use crate::utils::{NodeType, TrieError};
-use std::sync::{Arc, Mutex};
+
 
 #[derive(Debug)]
 pub struct ChildNode<I: Sized + Clone> {
     // Boxed due to recursive type.
     index_value: u8,
-    pub nodes: Box<Vec<ChildNode<I>>>,
+    pub nodes: Vec<ChildNode<I>>,
     pub node_type: NodeType<I>,
 }
 
@@ -16,14 +16,14 @@ impl<I: Sized + Clone> ChildNode<I> {
 
     pub fn new_branch(index_value: u8) -> ChildNode<I> {
         Self {
-            nodes: Box::new(vec![]),
+            nodes: vec![],
             node_type: NodeType::Branch,
             index_value,
         }
     }
     pub fn new_leaf(index_value: u8, data: I) -> ChildNode<I> {
         Self {
-            nodes: Box::new(vec![]),
+            nodes: vec![],
             node_type: NodeType::Leaf(data),
             index_value,
         }
@@ -31,7 +31,7 @@ impl<I: Sized + Clone> ChildNode<I> {
 
     pub fn insert(&mut self, key: &[u8], data: &I) -> Result<(), ()> {
         // Check to see if the node exists in the children.
-        let maybe_position = self.nodes.deref().iter().position(|n| {
+        let maybe_position = self.nodes.iter().position(|n| {
             n.index_value == key[0]
         });
 
@@ -101,15 +101,15 @@ impl<I: Sized + Clone> ChildNode<I> {
             // This is because that is the highest place we can remove the node.
             // A is_removed is used to mark if this highest node has been found as to not remove again.
             // Also the edge case is caught where there is always one node per branch.
-            if &self.nodes.len() == &1usize  {
+            if self.nodes.len() == 1usize  {
                 // Here we catch the edge case where we are at the root of the branch.
-                if key.len() == key_len  {
+                if key.len() == key_len && !is_removed  {
                     let _ = self.nodes.remove(*pos);
                     is_removed = true;
                 }
             } else {
                 // Here we have found a node with more than one child so we can delete that node.
-                if is_removed == false {
+                if !is_removed {
                     // drop the node from there.
                     let _ = self.nodes.remove(*pos);
                     is_removed = true;

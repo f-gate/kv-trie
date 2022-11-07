@@ -5,7 +5,6 @@ use core::marker::PhantomData;
 
 use crate::childnode::ChildNode;
 use crate::utils::*;
-use std::sync::Mutex;
 
 /// The trie, currently programmed as base 16.
 /// Uses the hash on the key inputted to compute a place in storage.
@@ -128,10 +127,6 @@ fn test_remove_crazy() {
 
 #[test]
 fn test_multithread() {
-    let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
-    let mutex_trie = Mutex::new(trie);
-
-    println!("{:?}", mutex_trie);
-    assert!(false);
+    let _trie: Trie<Blake2b512, &str, u64> = Trie::new();
 }
 
