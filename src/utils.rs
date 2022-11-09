@@ -1,3 +1,4 @@
+extern crate digest;
 use digest::{Digest, Output};
 
 #[derive(Debug, PartialEq, Eq)]
