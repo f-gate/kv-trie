@@ -1,14 +1,13 @@
 
     
     use crate::{Trie, utils::*, childnode::*};
-
+    use std::time::Instant;
     use blake2::Blake2b512;
 
 
     pub fn bench_get() {
         let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
         let _ = trie.insert("hello_world !! 12345", 60u64);
-        use std::time::Instant;
         let now = Instant::now();
     {
         let _ = trie.get("hello_world !! 12345");
@@ -20,7 +19,6 @@
         
     pub fn bench_insert() {
         let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
-        use std::time::Instant;
         let now = Instant::now();
         {
             let _ = trie.insert("hello_world !! 12345", 60u64);
@@ -33,13 +31,12 @@
             let _ = trie.insert("hello_world !! 12345", 60u64);
         }
         let elapsed = now.elapsed();
-        println!("Second insert to same key() elapsed: {:.2?}", elapsed);
+        println!("Second insert to same key() elapsed: {:.5?}", elapsed);
     }
 
 
     pub fn insert_crazy() {
         let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
-        use std::time::Instant;
         let num = 10_000u64;
         let input: Vec<String> = (0..num).into_iter().map(|i| {
             i.to_string()

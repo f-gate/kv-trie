@@ -8,7 +8,7 @@ pub enum TrieError {
 }
 
 /// A node is either a branch or a leaf, leafs store data (aswell as other things). 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum NodeType<T> {
     Leaf(T),
     Branch,
