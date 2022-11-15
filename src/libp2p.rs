@@ -15,11 +15,11 @@ use libp2p::kad::{
 };
 use crate::trie::*;
 use alloc::borrow::Cow;
-use std::{iter, collections::{hash_map, hash_set}};
+use std::{iter, collections::{hash_map, hash_set, HashMap, HashSet}};
 use digest::Digest;
 /// Implementing RecordStore for my generic Trie which is bound
 /// to the input strucs are that are defined within RecordStore. 
-impl <'a, T: Sized + Clone, K: Sized, I: Digest>  RecordStore<'a> for Trie<T, K, I> 
+impl <'a, T: Sized + Clone, K: Sized + Clone, I: Digest>  RecordStore<'a> for Trie<T, K, I> 
 where Trie<T, K, I>: StorageMethod<Record, Vec<u8>, I>
 {
     //From libp2p repo: rust-libp2p/protocols/kad/src/record/store/memory.rs
@@ -60,7 +60,7 @@ where Trie<T, K, I>: StorageMethod<Record, Vec<u8>, I>
 
 
     fn records(&self) -> Self::RecordsIter {
-        todo!()
+        HashMap::<Key, Record>::new().values().map(Cow::Borrowed)
     }
 
     fn add_provider(&mut self, record: libp2p::kad::ProviderRecord) -> libp2p::kad::store::Result<()> {
@@ -72,7 +72,7 @@ where Trie<T, K, I>: StorageMethod<Record, Vec<u8>, I>
     }
 
     fn provided(&self) -> Self::ProvidedIter {
-        todo!();
+        HashSet::<ProviderRecord>::new().iter().map(Cow::Borrowed)
     }
 
     fn remove_provider(&mut self, k: &libp2p::kad::record::Key, p: &libp2p::PeerId) {
