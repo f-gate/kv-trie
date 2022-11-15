@@ -2,8 +2,7 @@
 /// This Memory store trait is passed into the Kademlia which in turn is used
 /// when instantiating the swarm.
 /// Unfortunatly the methods provided by RecordStore are not very generic and require
-/// alot of fiddeling when using a generic heay structure like my trie.
-/// In some cases it seems neccesary to remove much of my generic implementation all together :(
+/// alot of fiddeling when using a generic heavy structure like my trie.
 
 extern crate alloc;
 
@@ -20,11 +19,10 @@ use std::{iter, collections::{hash_map, hash_set}};
 use blake2::{self, Blake2b512};
 use digest::Digest;
 
-impl <'a, T: Sized + Clone>  RecordStore<'a> for Trie<T> 
-where Trie<T>: StorageMethod<Record, Vec<u8>, Blake2b512>
+impl <'a, T: Sized + Clone, K: Sized, I: Digest>  RecordStore<'a> for Trie<T, K, I> 
+where Trie<T, K, I>: StorageMethod<Record, Vec<u8>, Blake2b512>
 {
     //From libp2p repo: rust-libp2p/protocols/kad/src/record/store/memory.rs
-    // Modified to used a Vec.
     type RecordsIter =
     iter::Map<hash_map::Values<'a, Key, Record>, fn(&'a Record) -> Cow<'a, Record>>;
 
@@ -34,7 +32,6 @@ where Trie<T>: StorageMethod<Record, Vec<u8>, Blake2b512>
     >;
    
     fn get(&self, k: &libp2p::kad::record::Key) -> Option<std::borrow::Cow<'_, libp2p::kad::Record>> {
-//
         let result = <Self as StorageMethod<Record, Vec<u8>, Blake2b512>>::get(&self, k.to_vec());
         if let Ok(data) = result {
             Some(Cow::Owned(
@@ -55,8 +52,7 @@ where Trie<T>: StorageMethod<Record, Vec<u8>, Blake2b512>
 
     fn put(&mut self, r: libp2p::kad::Record) -> libp2p::kad::store::Result<()> {
 
-        <Self as StorageMethod<Record, Vec<u8>, Blake2b512>>::insert(self, r.key.to_vec(), r);
-
+        let result = <Self as StorageMethod<Record, Vec<u8>, Blake2b512>>::insert(self, r.key.to_vec(), r);
         return Ok(())
     }
 
