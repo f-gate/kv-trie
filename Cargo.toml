@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 blake2 = "0.10.4"
 digest = "0.10.5"
+libp2p = {version = "0.48.0"}
