@@ -2,10 +2,17 @@
 
 This is the start of a larger distributed project yet to be named.
 
-None if it is meant to be exceptionally quick or efficient but i will try to maintain a sense of the aesthetic.
+None if it is meant to be exceptionally quick or efficient but i will try to maintain a sense of the aesthetic. It is simply a trie, nothing more.
+Built to be as generic as i can feasibly imagine it :).
+
+Currently implemented for use in libp2p as a "Memory Store" as it implements that trait. -ongoing
+An example can be found in trie-p2p repo using the Kademlia protocol.
 
 
 
+
+
+These benchmarks are done in debug mode. Release mode to come.
 ```
 V2 benchmarks 30/10/22  {
     Speed Benchmarks:
