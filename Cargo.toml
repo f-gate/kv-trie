@@ -9,3 +9,4 @@ edition = "2021"
 blake2 = "0.10.4"
 digest = "0.10.5"
 libp2p = {version = "0.48.0"}
+serde = "1.0.147"

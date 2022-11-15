@@ -16,11 +16,11 @@ use libp2p::kad::{
 use crate::trie::*;
 use alloc::borrow::Cow;
 use std::{iter, collections::{hash_map, hash_set}};
-use blake2::{self, Blake2b512};
 use digest::Digest;
-
+/// Implementing RecordStore for my generic Trie which is bound
+/// to the input strucs are that are defined within RecordStore. 
 impl <'a, T: Sized + Clone, K: Sized, I: Digest>  RecordStore<'a> for Trie<T, K, I> 
-where Trie<T, K, I>: StorageMethod<Record, Vec<u8>, Blake2b512>
+where Trie<T, K, I>: StorageMethod<Record, Vec<u8>, I>
 {
     //From libp2p repo: rust-libp2p/protocols/kad/src/record/store/memory.rs
     type RecordsIter =
@@ -32,51 +32,50 @@ where Trie<T, K, I>: StorageMethod<Record, Vec<u8>, Blake2b512>
     >;
    
     fn get(&self, k: &libp2p::kad::record::Key) -> Option<std::borrow::Cow<'_, libp2p::kad::Record>> {
-        let result = <Self as StorageMethod<Record, Vec<u8>, Blake2b512>>::get(&self, k.to_vec());
+        let result = <Self as StorageMethod<Record, Vec<u8>, I>>::get(&self, k.to_vec());
         if let Ok(data) = result {
             Some(Cow::Owned(
                 Record {
                     key: k.clone(),
-                    //todo
-                    value: vec![],
+                    value: data.value,
                     publisher: None,
                     expires: None,
                     }
                 )
             )
         } else {
-            // Handle Error?
             None
         }
     }
 
     fn put(&mut self, r: libp2p::kad::Record) -> libp2p::kad::store::Result<()> {
-
-        let result = <Self as StorageMethod<Record, Vec<u8>, Blake2b512>>::insert(self, r.key.to_vec(), r);
-        return Ok(())
+        let _ = <Self as StorageMethod<Record, Vec<u8>, I>>::insert(self, r.key.to_vec(), r);
+        Ok(())
     }
 
     fn remove(&mut self, k: &libp2p::kad::record::Key) {
-        todo!()
+        let _ =  <Self as StorageMethod<Record, Vec<u8>, I>>::remove(self, k.to_vec());
+        ()
     }
+
 
     fn records(&self) -> Self::RecordsIter {
         todo!()
     }
 
     fn add_provider(&mut self, record: libp2p::kad::ProviderRecord) -> libp2p::kad::store::Result<()> {
-        todo!()
+        Ok(())
     }
 
     fn providers(&self, key: &libp2p::kad::record::Key) -> Vec<libp2p::kad::ProviderRecord> {
-        todo!()
+        vec![]
     }
 
     fn provided(&self) -> Self::ProvidedIter {
-        todo!()
+        todo!();
     }
 
     fn remove_provider(&mut self, k: &libp2p::kad::record::Key, p: &libp2p::PeerId) {
-        todo!()
+        ()
     }
 }
