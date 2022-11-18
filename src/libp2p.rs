@@ -62,11 +62,11 @@ where
         todo!()
     }
 
-    fn add_provider(&mut self, record: libp2p::kad::ProviderRecord) -> libp2p::kad::store::Result<()> {
+    fn add_provider(&mut self, _record: libp2p::kad::ProviderRecord) -> libp2p::kad::store::Result<()> {
         Ok(())
     }
 
-    fn providers(&self, key: &libp2p::kad::record::Key) -> Vec<libp2p::kad::ProviderRecord> {
+    fn providers(&self, _key: &libp2p::kad::record::Key) -> Vec<libp2p::kad::ProviderRecord> {
         vec![]
     }
 
@@ -74,7 +74,7 @@ where
         todo!();
     }
 
-    fn remove_provider(&mut self, k: &libp2p::kad::record::Key, p: &libp2p::PeerId) {
+    fn remove_provider(&mut self, _k: &libp2p::kad::record::Key, p: &libp2p::PeerId) {
         ()
     }
 }

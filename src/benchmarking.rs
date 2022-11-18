@@ -1,5 +1,6 @@
 
     
+    
     use crate::{trie::{Trie, StorageMethod}, utils::*, childnode::*};
     use std::time::Instant;
     use blake2::Blake2b512;
@@ -93,7 +94,6 @@
     pub fn bench_removal_single() {
         let mut trie: Trie<u64, &str, Blake2b512> = Trie::new();
         let _ = trie.insert("hello_world !! 12345", 60u64);
-        use std::time::Instant;
         let now = Instant::now();
     {
         let _ = trie.remove("hello_world !! 12345");

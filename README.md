@@ -4,6 +4,16 @@ This is the start of a larger distributed project yet to be named.
 
 None if it is meant to be exceptionally quick or efficient but i will try to maintain a sense of the aesthetic.
 
+Final Benches in release mode {
+    Get elapsed: 1.23µs
+    Insert elapsed: 4.29µs
+    Second insert to same key() elapsed: 609.00000ns
+    Insert 10000 items average elapsed: 8.74µs
+    Remove elapsed: 3.99µs
+    Remove 10000 items average elapsed: 6.77µs
+    ~ 1243252 branches, 10000 leafs. After 10000 inserts.
+}
+
 
 
 ```
