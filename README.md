@@ -4,7 +4,9 @@ This is the start of a larger distributed project yet to be named.
 
 None if it is meant to be exceptionally quick or efficient but i will try to maintain a sense of the aesthetic. It is simply a trie.
 Built to be as generic as i can feasibly imagine it :).
+Currently implemented for use in libp2p as a "Memory Store" as it implements that trait. -[ongoing, unfinished]
 
+```
 V3 Benches in release mode {
     Get elapsed: 1.23µs
     Insert elapsed: 4.29µs
@@ -15,10 +17,6 @@ V3 Benches in release mode {
     ~ 1243252 branches, 10000 leafs. After 10000 inserts.
 }
 
-Currently implemented for use in libp2p as a "Memory Store" as it implements that trait. -[ongoing, unfinished]
-
-
-```
 V2 benchmarks 30/10/22  {
     Speed Benchmarks:
         Insert elapsed: 111.36µs
