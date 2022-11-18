@@ -1,16 +1,16 @@
 
     
-    use crate::{Trie, utils::*, childnode::*};
+    use crate::{trie::{Trie, StorageMethod}, utils::*, childnode::*};
     use std::time::Instant;
     use blake2::Blake2b512;
 
 
     pub fn bench_get() {
-        let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
+        let mut trie: Trie<u64, &str, Blake2b512> = Trie::new();
         let _ = trie.insert("hello_world !! 12345", 60u64);
         let now = Instant::now();
     {
-        let _ = trie.get("hello_world !! 12345");
+        let _ = trie.get("hello_world !! 12345", true);
     }
     
     let elapsed = now.elapsed();
@@ -18,7 +18,7 @@
     }
         
     pub fn bench_insert() {
-        let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
+        let mut trie: Trie<u64, &str, Blake2b512> = Trie::new();
         let now = Instant::now();
         {
             let _ = trie.insert("hello_world !! 12345", 60u64);
@@ -36,7 +36,7 @@
 
 
     pub fn insert_crazy() {
-        let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
+        let mut trie: Trie<u64, &str, Blake2b512> = Trie::new();
         let num = 10_000u64;
         let input: Vec<String> = (0..num).into_iter().map(|i| {
             i.to_string()
@@ -56,8 +56,8 @@
 
     pub fn count_number_of_branches() {
         let num = 10_000u64;
-        let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
-          let input: Vec<String> = (0..num).into_iter().map(|i| {
+        let mut trie: Trie<u64, &str, Blake2b512> = Trie::new();
+        let input: Vec<String> = (0..num).into_iter().map(|i| {
             i.to_string()
         }).collect();
 
@@ -91,7 +91,7 @@
 
 
     pub fn bench_removal_single() {
-        let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
+        let mut trie: Trie<u64, &str, Blake2b512> = Trie::new();
         let _ = trie.insert("hello_world !! 12345", 60u64);
         use std::time::Instant;
         let now = Instant::now();
@@ -103,7 +103,7 @@
     }
 
     pub fn remove_crazy() {
-        let mut trie: Trie<Blake2b512, &str, u64> = Trie::new();
+        let mut trie: Trie<u64, &str, Blake2b512> = Trie::new();
         use std::time::Instant;
         let num = 10_000u64;
         let input: Vec<String> = (0..num).into_iter().map(|i| {

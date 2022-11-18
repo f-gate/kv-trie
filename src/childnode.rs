@@ -1,6 +1,8 @@
 
 
 
+use std::borrow::Cow;
+
 use crate::utils::{NodeType, TrieError};
 
 
@@ -65,14 +67,20 @@ impl<I: Sized + Clone> ChildNode<I> {
         Ok(())
     }
 
-    pub fn get(&self, key: &[u8]) -> Result<I, TrieError> {
+    pub fn get(&self, key: &[u8], is_owned: bool) -> Result<Cow<I>, TrieError> {
         if let Some(pos) = &self.nodes.iter().position(|n| n.index_value == key[0]) {
             if key.len() > 1 {
                 // Continue recursion until we reach the leaf node.
-                self.nodes[*pos].get(&key[1..])
+                self.nodes[*pos].get(&key[1..], is_owned)
             } else {
                 match &self.nodes[*pos].node_type {
-                    NodeType::Leaf(data) => Ok(data.clone()),
+                    NodeType::Leaf(data) => {
+                        if is_owned {
+                            Ok(Cow::Owned(data.clone()))
+                        } else {
+                            Ok(Cow::Borrowed(data))
+                        }
+                    },
                     _ => Err(TrieError::ExpectedLeafGotBranch)
                 }
             }
