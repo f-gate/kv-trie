@@ -2,9 +2,10 @@
 
 This is the start of a larger distributed project yet to be named.
 
-None if it is meant to be exceptionally quick or efficient but i will try to maintain a sense of the aesthetic.
+None if it is meant to be exceptionally quick or efficient but i will try to maintain a sense of the aesthetic. It is simply a trie.
+Built to be as generic as i can feasibly imagine it :).
 
-Final Benches in release mode {
+V3 Benches in release mode {
     Get elapsed: 1.23µs
     Insert elapsed: 4.29µs
     Second insert to same key() elapsed: 609.00000ns
@@ -14,6 +15,7 @@ Final Benches in release mode {
     ~ 1243252 branches, 10000 leafs. After 10000 inserts.
 }
 
+Currently implemented for use in libp2p as a "Memory Store" as it implements that trait. -[ongoing, unfinished]
 
 
 ```
