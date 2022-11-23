@@ -1,13 +1,17 @@
 # kv-trie
 
-This is the start of a larger distributed project yet to be named.
+This is to be used in a future p2p state machine project where i have implemented raft consensus and plugged it into libp2p. This Trie structure will then be used as the persistant state. Probably unneccesary, type 1 fun. 
 
-None if it is meant to be exceptionally quick or efficient but i will try to maintain a sense of the aesthetic. It is simply a trie.
+None if it is meant to be exceptionally quick or efficient but i will try to maintain a sense of the aesthetic.
 Built to be as generic as i can feasibly imagine it :).
-Currently implemented for use in libp2p as a "Memory Store" as it implements that trait. -[ongoing, unfinished]
+Currently implemented for use in libp2p as a "Memory Store" as it implements that trait. -[ongoing, unfinished, waste of time]
 
+The Remove method prunes as it goes, making it more memory efficient but slower.
+The main issue is using the recursive type in a Box, i need to explore using other smart pointers, for this primitive implementation it will do.
+
+i have left the old benchmarks as antiquity.
 ```
-V3 Benches in release mode {
+V3 Benches in release mode 19/11/22 {
     Get elapsed: 1.23µs
     Insert elapsed: 4.29µs
     Second insert to same key() elapsed: 609.00000ns
@@ -16,6 +20,9 @@ V3 Benches in release mode {
     Remove 10000 items average elapsed: 6.77µs
     ~ 1243252 branches, 10000 leafs. After 10000 inserts.
 }
+
+
+-------------------------------------------------------------------------------------------------------------------
 
 V2 benchmarks 30/10/22  {
     Speed Benchmarks:
@@ -30,8 +37,6 @@ V2 benchmarks 30/10/22  {
         0 wasted as option arrays were removed :3.
         performance decreases for insert increases for get.
 }
-
-
 
  V1 benchmarks 30/10/22 { 
     Speed Benchmarks {
