@@ -7,7 +7,7 @@ Built to be as generic as i can feasibly imagine it :).
 Currently implemented for use in libp2p as a "Memory Store" as it implements that trait. -[ongoing, unfinished, waste of time]
 
 The Remove method prunes as it goes, making it more memory efficient but slower.
-The main issue is using the recursive type in a Box, i need to explore using other smart pointers, for this primitive implementation it will do.
+The main issue is using the recursive type in a Box, perhaps i can implement aN INTERFACE FOR CONCURRENCY
 
 i have left the old benchmarks as antiquity.
 ```
