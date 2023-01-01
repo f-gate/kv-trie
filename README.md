@@ -1,6 +1,6 @@
 # kv-trie
 
-This is to be used in a future p2p state machine project where i have implemented raft consensus and plugged it into libp2p. This Trie structure will then be used as the persistant state. Probably unneccesary, type 1 fun. 
+This is to be used in a future p2p state machine project where i have implemented raft consensus and plugged it into libp2p. This Trie structure will then be used as the persistant state.
 
 None if it is meant to be exceptionally quick or efficient but i will try to maintain a sense of the aesthetic.
 Built to be as generic as i can feasibly imagine it :).
