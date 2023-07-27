@@ -1,5 +1,7 @@
 # kv-trie
 
+An IN MEMORY trie.
+
 None if it is meant to be exceptionally quick or efficient but i will try to maintain a sense of the aesthetic.
 
 The Remove method prunes as it goes, making it more memory efficient but slower.
